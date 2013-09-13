@@ -1,0 +1,182 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Upload Ajax Java</title>
+    <script src="scripts/jquery-1.8.3.js"></script>
+    <script src="scripts/jquery-ui-1.9.2.custom.js"></script>
+	<script src="scripts/uploadjs.js" type="text/javascript"></script>
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+	
+	<style type="text/css">
+ 		@import url(style/style.css);
+	</style>
+
+	<script type="text/javascript">
+
+		var extensions		 = ["gif","jpg","jpeg","png","bmp","pdf"];
+		$(function() {
+			// Add new File :: 
+			$("#divAllega").hide();
+			$(".mostranascondi").click(function () {
+				if ($("#divAllega").is(":hidden")) {
+					$("#divAllega").slideDown("slow");
+				} else {
+					$("#divAllega").slideToggle("slow");
+				}
+			});
+
+			// set progressbar
+			var progressbar = $( "#progressbar" ),
+			progressLabel	= $( ".progress-label" );
+			progressbar.progressbar({	value: false,
+										change: function() {
+											progressLabel.text( progressbar.progressbar( "value" ) + "%" );
+
+
+								                var selector = "#" + this.id + " > div";
+								                var value = progressbar.progressbar( "value" );
+
+								                if (value < 10){
+								                    $(selector).css({ 'background': 'Red' });
+								                } else if (value < 30){
+								                    $(selector).css({ 'background': 'Orange' });
+								                } else if (value < 50){
+								                    $(selector).css({ 'background': 'Yellow' });
+								                } else{
+								                    $(selector).css({ 'background': 'LightGreen' });
+								                }
+
+
+
+											
+		      							},
+	 		      						complete: function() {
+											progressLabel.text( "Caricamento Terminato" );
+	 		      						}
+									});
+
+
+
+			
+/************************************************************/
+			 $('#idFile1').checkFileTypeAndSize({
+			     allowedExtensions: extensions,
+			     success: function() {
+			 		file1Valid = true;
+			         ///alert('Success');
+			     },
+			     errorFileType: function() {
+				     alert('campo file 2 formato non valido');
+				     file1Valid = false;
+			    	 clearFieldFile("idFile1");
+			     },
+			     errorFileSize: function() {
+				     alert('campo file 1 size non valido');
+				     file1Valid = false;
+			    	 clearFieldFile("idFile1");
+			     }
+			 });
+			
+			 $('#idFile2').checkFileTypeAndSize({
+			     allowedExtensions: extensions,
+			     success: function() {
+			    	 file2Valid = true;
+			         //alert('Success');
+			     },
+			     errorFileType: function() {
+				     alert('campo file 2 formato non valido');
+			    	 file2Valid = false;
+			    	 clearFieldFile("idFile2");
+			     },
+			     errorFileSize: function() {
+				     alert('campo file 2 size non valido');
+			    	 file2Valid = false;
+			    	 clearFieldFile("idFile2");
+			     }
+			 });
+			
+/**************************************************************/
+/********************** DEBUG *********************************/
+			// Scrivo Nome e Ver del Browser
+			jQuery.each(jQuery.browser, function(i, val) {	$("<div>" + i + " : <span>" + val + "</span>").appendTo( document.body ); });
+			//<!--  Img utile per il calcolo del size su IE  da metter -> style="visibility:hidden;" -->
+			$("<img src='' id='myImage' width='50px' height='50px' >").appendTo( document.body );
+			
+/**************************************************************/
+
+		});// End onLoad
+
+
+		
+		//----------------------------------------------------------------------------------------
+		// gestione Upload Documenti -------------------------------------------------------------
+		//----------------------------------------------------------------------------------------
+		function startSendForm() {
+
+console.log("startSendForm!!");
+			if (!(file1Valid  &&
+				($('#idFile2').attr('value') == "" || file2Valid)	)){
+				alert('invalid form');
+				return false;
+			}else{
+		        var url = "example/FileUploadServlet1";
+				$.ajax({   url:url,
+						   cache:false,
+						   processData:false,
+						   contentType:false,
+						   type:'GET',
+						   success:function (data, status, req) {
+							   successSendForm(data,req);
+						   },
+						   error:function (req, status, error) {
+							   //console.log(" - error - ");
+						   }
+					});// End post Form
+			}
+		}
+
+		function successSendForm(data,req){
+			if (req.readyState == 4 && req.status == 200){
+				//progressbar = data.percentComplete; 
+			    if (data.percentComplete < 100){
+					window.setTimeout("startSendForm();", 50);
+					$("#progressbar").progressbar("option","value",progressbar);
+			   	}else{
+					$("#progressbar").progressbar("option","value",100);
+				}	
+			}
+		}
+
+		function completeCallback(response) {
+			//alert("completeCallback !!");
+			$('#responseId').html(response);
+		}
+
+	</script>
+</head>
+<body>
+	<button class="mostranascondi">Allega secondo file</button>
+
+		<form  action="example/FileUploadServlet1" enctype="multipart/form-data" method="post" onsubmit="return UPLOADJS.submit(this, {'onStart' : startSendForm, 'onComplete' : completeCallback}, 2 )">
+			 
+			<div><label>File1:</label>
+			<input name="nameFile1" type="file" id="idFile1" /></div>
+			
+			<div id="divAllega" style="border:1px solid black;height: 50px;width: 300px;">
+				<div><label>File2:</label>
+				<input name="nameFile2" type="file" id="idFile2" /></div>
+			 </div>
+			
+			<div>
+			<input type="submit" value="SUBMIT" /></div>
+
+		</form>
+	
+
+
+  		<div id="progressbar" width="800px" ><div class="progress-label">Loading...</div></div>
+		<br>Esito:<br>
+ 		<div>[ <span id="responseId"> - </span>]</div>
+</body>
+</html>
